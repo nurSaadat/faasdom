@@ -116,7 +116,7 @@ The following actions can be performed:
 
 A user can deploy and delete tests. Following parameters exist:
 
- - **Test:** The tast that will be deployed
+ - **Test:** The test that will be deployed
  - **Memory:** Amount of memory the function instance will have (not applicable for Azure)
  - **Timeout:** Function timeout (not applicable for Azure)
  - **Clouds:** The clouds to deploy the function to
