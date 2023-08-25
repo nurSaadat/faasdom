@@ -64,7 +64,6 @@ For each cloud provider you need to create an account and maybe setup some thing
   - For AWS see: [Amazon Web Services Setup.md](aws/Amazon%20Web%20Services%20Setup.md)
   - For Azure see: [Microsoft Azure Setup.md](azure/Microsoft%20Azure%20Setup.md)
   - For Google see: [Google Cloud Setup.md](google/Google%20Cloud%20Setup.md)
-  - For IBM see: [IBM Cloud Setup.md](ibm/IBM%20Cloud%20Setup.md)
 
 You also need to create some docker volumes and login into the cloud CLIs, so they can be used in a docker container.
 In this case they will even be used from another docker container (so called docker in docker or DinD).
