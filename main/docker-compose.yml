@@ -10,7 +10,7 @@ services:
     container_name: azure-cli
 
   google-cli:
-    image: google/cloud-sdk:274.0.1-alpine
+    image: google/cloud-sdk:400.0.0
     container_name: google-cli
 
   ibm-cli:
@@ -26,7 +26,7 @@ services:
     container_name: alpine-wrk2
 
   node:
-    image: node:10.16.2-alpine
+    image: node:18-alpine
     container_name: node
 
   golang:
@@ -43,10 +43,9 @@ services:
     env_file:
       - env.influx
     ports:
-      - "8083:8083"
-      - "8086:8086"
-      - "8090:8090"
-    network_mode: "host"
+      - '8083:8083'
+      - '8086:8086'
+      - '8090:8090'
     volumes:
       - influx:/var/lib/influxdb
 
@@ -54,10 +53,9 @@ services:
     image: grafana/grafana:6.3.2
     container_name: grafana
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file:
       - env.grafana
-    network_mode: "host"
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
@@ -70,8 +68,7 @@ services:
       - db
       - grafana
     ports:
-      - "3001:3001"
-    network_mode: "host"
+      - '3001:3001'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
