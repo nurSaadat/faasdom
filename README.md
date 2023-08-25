@@ -14,7 +14,6 @@ With this tool written in [Node.js](https://nodejs.org/) you can benchmark **ser
   - [Amazon Web Services](https://aws.amazon.com/) with its serverless service [AWS Lambda](https://aws.amazon.com/lambda/features/)
   - [Microsoft Azure](https://azure.microsoft.com/) with its serverless service [Azure Functions](https://azure.microsoft.com/en-us/services/functions/)
   - [Google Cloud](https://cloud.google.com/) with its serverless service [Google Cloud Functions](https://cloud.google.com/functions/)
-  - [IBM Cloud](https://www.ibm.com/cloud/) with its serverless service [IBM Cloud Functions](https://www.ibm.com/cloud/functions)
 
 and in the following programming languages:
 
@@ -76,7 +75,6 @@ For this you will need to do the following steps:
 docker volume create serverless-data
 docker volume create aws-secrets
 docker volume create google-secrets
-docker volume create ibm-secrets
 docker volume create azure-secrets
 
 # copy all data into the docker volume (IMPORTANT: run from the project root directory!)
@@ -88,10 +86,6 @@ docker rm helper
 docker run --rm -tiv aws-secrets:/root/.aws mikesir87/aws-cli:1.16.310 aws configure
 docker run --rm -tiv azure-secrets:/root/.azure mcr.microsoft.com/azure-cli:2.0.78 az login
 docker run --rm -tiv google-secrets:/root/.config/gcloud google/cloud-sdk:400.0.0 gcloud init
-docker run --rm -tiv ibm-secrets:/root/.bluemix ibmcom/ibm-cloud-developer-tools-amd64:0.20.0 ibmcloud login
-
-# with ibm you also have to set the region -r, the API endpoint --cf-api, the organization -o and the space -s
-docker run --rm -tiv ibm-secrets:/root/.bluemix ibmcom/ibm-cloud-developer-tools-amd64:0.20.0 ibmcloud target -r <YOUR_REGION> --cf-api https://api.<YOUR_REGION>.cf.cloud.ibm.com -o <YOUR_ORGANIZATION> -s <YOUR_SPACE>
 ```
 
 ## Usage
