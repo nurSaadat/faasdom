@@ -1741,7 +1741,8 @@ async function deployFunction(
           ' --runtime-version ' +
           runtimeVersion +
           ' --os-type ' +
-          os
+          os +
+          '--functions-version 3'
       ).catch((err) => {
         error = true;
         if (provider == constants.AZURE) {
