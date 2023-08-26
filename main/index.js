@@ -516,10 +516,10 @@ async function deploy(params, func, funcFirstUpperCase, testName) {
     let p = deployGoogle(params, func, funcFirstUpperCase, testName);
     promises.push(p);
   }
-  if (params.ibm == 'true') {
-    let p = deployIBM(params, func, funcFirstUpperCase, testName);
-    promises.push(p);
-  }
+  // if (params.ibm == 'true') {
+  //   let p = deployIBM(params, func, funcFirstUpperCase, testName);
+  //   promises.push(p);
+  // }
 
   await Promise.all(promises);
 
