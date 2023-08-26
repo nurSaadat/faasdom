@@ -21,7 +21,7 @@ const influx = new Influx.InfluxDB({
 
 /** Constant strings */
 const AWS_CONTAINER_IMAGE = 'mikesir87/aws-cli:1.16.310';
-const AZURE_CONTAINER_IMAGE = 'mcr.microsoft.com/azure-cli:2.0.78';
+const AZURE_CONTAINER_IMAGE = 'mcr.microsoft.com/azure-cli';
 const GOOGLE_CONTAINER_IMAGE = 'google/cloud-sdk:400.0.0';
 // const IBM_CONTAINER_IMAGE = 'ibmcom/ibm-cloud-developer-tools-amd64:0.20.0';
 

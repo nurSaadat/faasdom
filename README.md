@@ -1,36 +1,36 @@
 # The FAASDOM benchmark suite
+
 This is a fork of Pascal Maissen's original [MSc thesis report](https://github.com/Bschitter/benchmark-suite-serverless-computing).
-The results of this work will appear in the proceedings of the upcoming [14th ACM International Conference in Distributed and Event-Based Systems (ACM DEBS 2020)](https://2020.debs.org/). 
+The results of this work will appear in the proceedings of the upcoming [14th ACM International Conference in Distributed and Event-Based Systems (ACM DEBS 2020)](https://2020.debs.org/).
 
 Please refer to this work using: _TBD (link in the ACM DL to appear beginning of July 2020)_
 
 ![Overview](images/main_app.png)
 
-
 ## About
 
 With this tool written in [Node.js](https://nodejs.org/) you can benchmark **serverless** platforms from the following cloud computing providers:
 
-  - [Amazon Web Services](https://aws.amazon.com/) with its serverless service [AWS Lambda](https://aws.amazon.com/lambda/features/)
-  - [Microsoft Azure](https://azure.microsoft.com/) with its serverless service [Azure Functions](https://azure.microsoft.com/en-us/services/functions/)
-  - [Google Cloud](https://cloud.google.com/) with its serverless service [Google Cloud Functions](https://cloud.google.com/functions/)
+- [Amazon Web Services](https://aws.amazon.com/) with its serverless service [AWS Lambda](https://aws.amazon.com/lambda/features/)
+- [Microsoft Azure](https://azure.microsoft.com/) with its serverless service [Azure Functions](https://azure.microsoft.com/en-us/services/functions/)
+- [Google Cloud](https://cloud.google.com/) with its serverless service [Google Cloud Functions](https://cloud.google.com/functions/)
 
 and in the following programming languages:
 
-  - [Node.js](https://nodejs.org/)
-  - [Python](https://www.python.org/)
-  - [Go](https://golang.org/)
-  - [.NET Core](https://dotnet.microsoft.com/)
+- [Node.js](https://nodejs.org/)
+- [Python](https://www.python.org/)
+- [Go](https://golang.org/)
+- [.NET Core](https://dotnet.microsoft.com/)
 
 The basic idea is that you can deploy and run various tests and see how they perform on each cloud and/or programming language.
 
 ### Available tests
 
-  - **Latency test:** measures the latency of a very simple function
-  - **CPU test (factors):** calculates the factors of a number iteratively to benchmark the CPU performance
-  - **CPU test (matrix):** multiplicates two NxN matrices iteratively to benchmark the CPU performance
-  - **Filesystem test:** writes and reads n times a x kB text file to the filesystem
-  - **Custom test:** implement you own test, templates are provided
+- **Latency test:** measures the latency of a very simple function
+- **CPU test (factors):** calculates the factors of a number iteratively to benchmark the CPU performance
+- **CPU test (matrix):** multiplicates two NxN matrices iteratively to benchmark the CPU performance
+- **Filesystem test:** writes and reads n times a x kB text file to the filesystem
+- **Custom test:** implement you own test, templates are provided
 
 ## Getting started
 
@@ -61,9 +61,9 @@ sudo usermod -aG docker $USER
 
 For each cloud provider you need to create an account and maybe setup some things:
 
-  - For AWS see: [Amazon Web Services Setup.md](aws/Amazon%20Web%20Services%20Setup.md)
-  - For Azure see: [Microsoft Azure Setup.md](azure/Microsoft%20Azure%20Setup.md)
-  - For Google see: [Google Cloud Setup.md](google/Google%20Cloud%20Setup.md)
+- For AWS see: [Amazon Web Services Setup.md](aws/Amazon%20Web%20Services%20Setup.md)
+- For Azure see: [Microsoft Azure Setup.md](azure/Microsoft%20Azure%20Setup.md)
+- For Google see: [Google Cloud Setup.md](google/Google%20Cloud%20Setup.md)
 
 You also need to create some docker volumes and login into the cloud CLIs, so they can be used in a docker container.
 In this case they will even be used from another docker container (so called docker in docker or DinD).
@@ -83,7 +83,7 @@ docker rm helper
 
 # mount the volumes and login with the cloud provider
 docker run --rm -tiv aws-secrets:/root/.aws mikesir87/aws-cli:1.16.310 aws configure
-docker run --rm -tiv azure-secrets:/root/.azure mcr.microsoft.com/azure-cli:2.0.78 az login
+docker run --rm -tiv azure-secrets:/root/.azure mcr.microsoft.com/azure-cli az login
 docker run --rm -tiv google-secrets:/root/.config/gcloud google/cloud-sdk:400.0.0 gcloud init
 ```
 
@@ -109,24 +109,24 @@ The following actions can be performed:
 
 A user can deploy and delete tests. Following parameters exist:
 
- - **Test:** The test that will be deployed
- - **Memory:** Amount of memory the function instance will have (not applicable for Azure)
- - **Timeout:** Function timeout (not applicable for Azure)
- - **Clouds:** The clouds to deploy the function to
- - **Languages:** Runtimes to deploy
- - **Locations:** Choose the region for each cloud
+- **Test:** The test that will be deployed
+- **Memory:** Amount of memory the function instance will have (not applicable for Azure)
+- **Timeout:** Function timeout (not applicable for Azure)
+- **Clouds:** The clouds to deploy the function to
+- **Languages:** Runtimes to deploy
+- **Locations:** Choose the region for each cloud
 
 The **Deploy** button will iniciate a deploy process and the **Cleanup All** button will clenaup everything.
 Status can be seen on the right.
 
- **IMPORTANT:** The cleanup process will delete all API gateways and Lambda functions on AWS, all resource groups containing the name of a test on Azure, all functions in the configured project for Google and all IBM functions and gateways. Use with caution!
+**IMPORTANT:** The cleanup process will delete all API gateways and Lambda functions on AWS, all resource groups containing the name of a test on Azure, all functions in the configured project for Google and all IBM functions and gateways. Use with caution!
 
 #### Run Comparison Tests
 
 Run a comparison test. Following parameters exist:
 
- - **Test name:** Name to identify the test later
- - **Function dependant paramters:** various function dependant parameters
+- **Test name:** Name to identify the test later
+- **Function dependant paramters:** various function dependant parameters
 
 The test can be startet with the **Run** button and stopped with the **Stop** button.
 Results will be viewable in Grafana.
@@ -135,11 +135,11 @@ Results will be viewable in Grafana.
 
 Run a load test for deployed functions. Following parameters exist:
 
- - **Requests per second:** how many request per second should be sent to the function
- - **Duration:** duration of the benchmark
- - **Test:** whcih one of the tests should be benchmarked
- - **N:** function dependant parameter
- - **Test name:** Name to identify the test later
+- **Requests per second:** how many request per second should be sent to the function
+- **Duration:** duration of the benchmark
+- **Test:** whcih one of the tests should be benchmarked
+- **N:** function dependant parameter
+- **Test name:** Name to identify the test later
 
 The application will benchmark the deployed functions with [wrk2](https://github.com/giltene/wrk2).
 Results will be viewable in Grafana.
@@ -148,10 +148,10 @@ Results will be viewable in Grafana.
 
 Calculate hypothetical prices by providing following parameters:
 
- - **Calls:** Number of calls per month
- - **Execution Time:** Estimated execution time of the function in ms
- - **Return Size:** return size of the returned function body in KB
- - **Memory:** memory allocation chosen for the function
+- **Calls:** Number of calls per month
+- **Execution Time:** Estimated execution time of the function in ms
+- **Return Size:** return size of the returned function body in KB
+- **Memory:** memory allocation chosen for the function
 
 The button **Calculate / Update** will do the calculation and they will be shown on the right side.
 
@@ -159,10 +159,10 @@ The button **Calculate / Update** will do the calculation and they will be shown
 
 Calculate prices regarding a specific test:
 
- - **Calls:** Number of calls per month
- - **Test:** Factors, Matrix, Custom
- - **Test Name:** Name given during comparison test
- - **Runtime:** Runtime to be calculated
+- **Calls:** Number of calls per month
+- **Test:** Factors, Matrix, Custom
+- **Test Name:** Name given during comparison test
+- **Runtime:** Runtime to be calculated
 
 The button **Calculate / Update** will do the calculation and they will be shown on the right side.
 
@@ -196,4 +196,4 @@ docker volume rm $(docker volume ls -q)
 
 #### Azure
 
- - The timeout parameter for Azure is currently ignored because the way the deploy mechanism is implemented does not support it that easily.
+- The timeout parameter for Azure is currently ignored because the way the deploy mechanism is implemented does not support it that easily.
