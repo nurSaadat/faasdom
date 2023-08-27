@@ -751,6 +751,14 @@
             Show Error Log
           </button>
           <button
+            id="showResultLogButton"
+            type="button"
+            class="btn btn-primary"
+            style="margin: 5px"
+          >
+            Show Results!
+          </button>
+          <button
             id="cleanupLogFileButton"
             type="button"
             class="btn btn-danger"
@@ -968,6 +976,10 @@
 
     $('#showLogFileButton').click(function cleanup() {
       window.open('logfile', '_blank');
+    });
+
+    $('#showResultLogButton').click(function cleanup() {
+      window.open('resultlog', '_blank');
     });
 
     $('#cleanupLogFileButton').click(function cleanup() {

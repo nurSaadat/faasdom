@@ -299,26 +299,6 @@ function insertIntoDB(
   errors,
   n
 ) {
-  console.log(
-    'INSERT FUNCTION: ',
-    test,
-    testName,
-    language,
-    provider,
-    memory,
-    duration,
-    latency_avg,
-    latency_stdev,
-    latency_max,
-    total_count,
-    rps,
-    rps_avg,
-    percentile_50,
-    percentile_95,
-    percentile_99,
-    errors,
-    n
-  );
   var data = [
     {
       measurement: test,
@@ -344,6 +324,9 @@ function insertIntoDB(
       },
     },
   ];
+
+  var jsonString = JSON.stringify(data);
+  fs.appendFileSync('./results.log', jsonString);
 
   influx.writePoints(data).catch((err) => {
     console.error(err);

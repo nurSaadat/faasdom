@@ -174,6 +174,15 @@ app.get('/logfile', function (req, res, next) {
   res.send(html);
 });
 
+app.get('/resultlog', function (req, res, next) {
+  let log = fs.readFileSync('./results.log');
+  let html = '<!DOCTYPE html><html><body>';
+  html += log.toString();
+  html += '</body></html>';
+  html = html.replace(/\n/g, '<br>');
+  res.send(html);
+});
+
 app.get('/cleanupLogFile', function (req, res, next) {
   runningStatus = true;
   resetLogStatus();
