@@ -1,10 +1,20 @@
+/*
+https://node-influx.github.io/
+https://www.influxdata.com/blog/getting-started-with-node-influx/
+https://github.com/mschae16/node-influx-highcharts-sample/blob/master/app.js#L30
+https://node-influx.github.io/manual/tutorial.html
+https://node-influx.github.io/class/src/index.js~InfluxDB.html
+https://node-influx.github.io/manual/tutorial.html
+
+*/
+
 const fs = require('fs');
 const Influx = require('influx');
 const constants = require('./constants.js');
 const exec = require('child_process').exec;
 const request = require('request');
 
-const tags = ['test', 'provider', 'language', 'memory'];
+const tags = ['test', 'language', 'provider', 'memory'];
 
 const influx = new Influx.InfluxDB({
   host: '139.59.146.75',
@@ -191,6 +201,8 @@ async function loadtest(test, testName, rps, duration, n) {
     let percentile_99 = 0;
     let errors = 0;
 
+    console.log('RESULT', result);
+
     let lines = result.split('\n');
     for (let j = 0; j < lines.length; j++) {
       if (lines[j].startsWith('#[Mean')) {
@@ -287,6 +299,26 @@ function insertIntoDB(
   errors,
   n
 ) {
+  console.log(
+    'INSERT FUNCTION: ',
+    test,
+    testName,
+    language,
+    provider,
+    memory,
+    duration,
+    latency_avg,
+    latency_stdev,
+    latency_max,
+    total_count,
+    rps,
+    rps_avg,
+    percentile_50,
+    percentile_95,
+    percentile_99,
+    errors,
+    n
+  );
   var data = [
     {
       measurement: test,
@@ -320,3 +352,68 @@ function insertIntoDB(
 }
 
 module.exports = { loadtest };
+
+// const influx = new Influx.InfluxDB({
+//   host: '139.59.146.75',
+//   port: 8086,
+//   database: 'results',
+//   username: 'benchmark-suite',
+//   password: 'benchmark',
+//   schema: [
+//     {
+//       measurement: 'tide',
+//       fields: {
+//         height: Influx.FieldType.FLOAT,
+//       },
+//       tags: ['unit', 'location'],
+//     },
+//   ],
+// });
+
+// const writeDataToInflux = (locationObj) => {
+//   locationObj.rawtide.rawTideObs.forEach((tidePoint) => {
+//     influx
+//       .writePoints(
+//         [
+//           {
+//             measurement: 'tide',
+//             tags: {
+//               unit: locationObj.rawtide.tideInfo[0].units,
+//               location: locationObj.rawtide.tideInfo[0].tideSite,
+//             },
+//             fields: { height: tidePoint.height },
+//             timestamp: tidePoint.epoch,
+//           },
+//         ],
+//         {
+//           database: 'ocean_tides',
+//           precision: 's',
+//         }
+//       )
+//       .catch((error) => {
+//         console.error(`Error saving data to InfluxDB! ${err.stack}`);
+//       });
+//   });
+// };
+
+// function influxtest() {
+//   influx
+//     .getDatabaseNames()
+//     .then((names) => {
+//       if (!names.includes('ocean_tides')) {
+//         return influx.createDatabase('ocean_tides');
+//       }
+//     })
+//     .then(() => {
+//       app.listen(app.get('port'), () => {
+//         console.log(`Listening on ${app.get('port')}.`);
+//       });
+//       writeDataToInflux(hanalei);
+//       writeDataToInflux(hilo);
+//       writeDataToInflux(honolulu);
+//       writeDataToInflux(kahului);
+//     })
+//     .catch((error) => console.log({ error }));
+// }
+
+// module.exports = { influxtest };
