@@ -143,14 +143,17 @@ app.get('/loadtest', function (req, res, next) {
 });
 
 async function loadtest(test, testName, rps, duration, n) {
-  console.log('INSIDE LOADTEST');
+  fs.appendFileSync('./results.log', 'INSIDE LOADTEST');
+
   let result = await loadtestModule.loadtest(test, testName, rps, duration, n);
+  var jsonString = JSON.stringify(result);
+  fs.appendFileSync('./results.log', jsonString);
   // let result = loadtestModule.influxtest();
-  console.log(result);
+  fs.appendFileSync('./results.log', result);
 
   if (result) {
     resetLogStatus();
-    currentLogStatus = 'Benchmark finished.';
+    currentLogStatus = result;
   } else {
     resetLogStatus();
     currentLogStatus = 'Benchmark failed.';
