@@ -277,8 +277,7 @@ async function loadtest(test, testName, rps, duration, n) {
     );
   }
 
-  // return !error;
-  return result;
+  return !error;
 }
 
 function insertIntoDB(
