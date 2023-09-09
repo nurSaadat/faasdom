@@ -1,17 +1,29 @@
 const constants = require('./constants.js');
 const testingModule = require('./testing.js');
 const loadtestModule = require('./loadtest.js');
+const pricing = require('./pricing.js');
 const fs = require('fs');
 const exec = require('child_process').exec;
 const express = require('express');
 const app = express();
 const now = require('performance-now');
 const locks = require('locks');
+const Influx = require('influx');
+
+const influx = new Influx.InfluxDB({
+  host: '139.59.146.75',
+  port: 8086,
+  database: 'results',
+  username: 'benchmark-suite',
+  password: 'benchmark',
+  schema: [],
+});
 
 /** Constant strings */
 const AWS_CONTAINER_IMAGE = 'mikesir87/aws-cli:1.16.310';
 const AZURE_CONTAINER_IMAGE = 'mcr.microsoft.com/azure-cli';
 const GOOGLE_CONTAINER_IMAGE = 'google/cloud-sdk:400.0.0';
+const IBM_CONTAINER_IMAGE = 'ibmcom/ibm-cloud-developer-tools-amd64:0.20.0';
 
 /** variable for config data */
 var config;
@@ -25,6 +37,8 @@ var currentLogStatusAzureWindows = '';
 var currentLogStatusAzureWindowsEnd = '';
 var currentLogStatusGoogle = '';
 var currentLogStatusGoogleEnd = '';
+var currentLogStatusIBM = '';
+var currentLogStatusIBMEnd = '';
 var currentLogStatusEnd = '';
 
 var runningStatus = false;
@@ -32,6 +46,7 @@ var runningStatusAWS = false;
 var runningStatusAzure = false;
 var runningStatusAzureWindows = false;
 var runningStatusGoogle = false;
+var runningStatusIBM = false;
 
 var amountOfCallsCounter = 0;
 
@@ -57,6 +72,7 @@ app.get('/deploy', async function (req, res, next) {
   config.aws.region = req.query.awslocation;
   config.azure.region = req.query.azurelocation;
   config.google.region = req.query.googlelocation;
+  config.ibm.region = req.query.ibmlocation;
   if (req.query.latency == 'true') {
     deploy(req.query, constants.LATENCY, 'Latency', 'Latency');
   } else if (req.query.factors == 'true') {
@@ -160,6 +176,210 @@ async function loadtest(test, testName, rps, duration, n) {
   runningStatus = false;
 }
 
+app.get('/theoreticalPricing', function (req, res, next) {
+  resetLogStatus();
+  let tables = pricing.calcAllPrices(
+    Number(req.query.calls),
+    Number(req.query.execTime),
+    Number(req.query.size),
+    Number(req.query.memory)
+  );
+  let result = '';
+  for (let i = 0; i < tables.length; i++) {
+    result += '<div class="row" style="min-height: 20px"></div>';
+    result +=
+      '<style>table {font-family: arial, sans-serif;border-collapse: collapse; width: 95%;}td, th {border: 1px solid #dddddd;text-align: left;padding: 2px;}</style>';
+    result +=
+      '<div class="row"><table><tr><th><p class="text-primary">' +
+      tables[i].provider +
+      '</p></th><th>Gross Value</th><th>Free Tier</th><th>Net Value</th><th>Unit Price</th><th>Total Price</th> </tr>';
+    if (tables[i].provider != constants.IBM) {
+      result +=
+        '<tr><td>Invocations</td><td>' +
+        tables[i].invocations.gross.toLocaleString() +
+        '</td><td>' +
+        tables[i].invocations.free.toLocaleString() +
+        '</td><td>' +
+        tables[i].invocations.net.toLocaleString() +
+        '</td><td>' +
+        tables[i].invocations.unit.toFixed(7) +
+        ' $</td><td>' +
+        tables[i].invocations.total.toFixed(2) +
+        ' $</td></tr>';
+    }
+    result +=
+      '<tr><td>GB-seconds</td><td>' +
+      tables[i].gb_seconds.gross.toLocaleString() +
+      '</td><td>' +
+      tables[i].gb_seconds.free.toLocaleString() +
+      '</td><td>' +
+      tables[i].gb_seconds.net.toLocaleString() +
+      '</td><td>' +
+      tables[i].gb_seconds.unit.toFixed(10) +
+      ' $</td><td>' +
+      tables[i].gb_seconds.total.toFixed(2) +
+      ' $</td></tr>';
+    if (tables[i].provider == constants.GOOGLE) {
+      result +=
+        '<tr><td>GHz-seconds</td><td>' +
+        tables[i].ghz_seconds.gross.toLocaleString() +
+        '</td><td>' +
+        tables[i].ghz_seconds.free.toLocaleString() +
+        '</td><td>' +
+        tables[i].ghz_seconds.net.toLocaleString() +
+        '</td><td>' +
+        tables[i].ghz_seconds.unit.toFixed(5) +
+        ' $</td><td>' +
+        tables[i].ghz_seconds.total.toFixed(2) +
+        ' $</td></tr>';
+    }
+    if (tables[i].provider != constants.IBM) {
+      result +=
+        '<tr><td>Networking</td><td>' +
+        tables[i].networking.gross.toLocaleString() +
+        ' GB</td><td>' +
+        tables[i].networking.free.toLocaleString() +
+        ' GB</td><td>' +
+        tables[i].networking.net.toLocaleString() +
+        ' GB</td><td>' +
+        tables[i].networking.unit.toFixed(3) +
+        ' $</td><td>' +
+        tables[i].networking.total.toFixed(2) +
+        ' $</td></tr>';
+    }
+    result +=
+      '<tr><th>Total / Month</th><th></th><th></th><th></th><th></th><th>' +
+      tables[i].total_price.toFixed(2) +
+      ' $</th></tr>';
+    result += '</table></div>';
+  }
+  res.send({ data: result, running: runningStatus });
+});
+
+app.get('/testedPricing', async function (req, res, next) {
+  resetLogStatus();
+  let tables = await pricing.calcAllPricesFromTest(
+    Number(req.query.calls),
+    req.query.testName,
+    req.query.test,
+    req.query.runtime
+  );
+  let result =
+    '<h4>' +
+    req.query.test +
+    ' - ' +
+    req.query.testName +
+    ' - ' +
+    req.query.runtime +
+    '</h4>';
+  for (let i = 0; i < tables.length; i++) {
+    result += '<div class="row" style="min-height: 20px"></div>';
+    if (tables[i].execTime.toFixed(0) != 0) {
+      result +=
+        '<style>table {font-family: arial, sans-serif;border-collapse: collapse; width: 95%;}td, th {border: 1px solid #dddddd;text-align: left;padding: 2px;}</style>';
+      result +=
+        '<div class="row"><table><tr><th>' +
+        tables[i].provider +
+        ', mean time: ' +
+        tables[i].execTime.toFixed(0) +
+        ' ms</th><th>Gross Value</th><th>Free Tier</th><th>Net Value</th><th>Unit Price</th><th>Total Price</th> </tr>';
+      result +=
+        '<tr><td>Invocations</td><td>' +
+        tables[i].invocations.gross.toLocaleString() +
+        '</td><td>' +
+        tables[i].invocations.free.toLocaleString() +
+        '</td><td>' +
+        tables[i].invocations.net.toLocaleString() +
+        '</td><td>' +
+        tables[i].invocations.unit.toFixed(7) +
+        ' $</td><td>' +
+        tables[i].invocations.total.toFixed(2) +
+        ' $</td></tr>';
+      result +=
+        '<tr><td>GB-seconds</td><td>' +
+        tables[i].gb_seconds.gross.toLocaleString() +
+        '</td><td>' +
+        tables[i].gb_seconds.free.toLocaleString() +
+        '</td><td>' +
+        tables[i].gb_seconds.net.toLocaleString() +
+        '</td><td>' +
+        tables[i].gb_seconds.unit.toFixed(10) +
+        ' $</td><td>' +
+        tables[i].gb_seconds.total.toFixed(2) +
+        ' $</td></tr>';
+      result +=
+        '<tr><td>GHz-seconds</td><td>' +
+        tables[i].ghz_seconds.gross.toLocaleString() +
+        '</td><td>' +
+        tables[i].ghz_seconds.free.toLocaleString() +
+        '</td><td>' +
+        tables[i].ghz_seconds.net.toLocaleString() +
+        '</td><td>' +
+        tables[i].ghz_seconds.unit.toFixed(5) +
+        ' $</td><td>' +
+        tables[i].ghz_seconds.total.toFixed(2) +
+        ' $</td></tr>';
+      result +=
+        '<tr><td>Networking</td><td>' +
+        tables[i].networking.gross.toLocaleString() +
+        ' GB</td><td>' +
+        tables[i].networking.free.toLocaleString() +
+        ' GB</td><td>' +
+        tables[i].networking.net.toLocaleString() +
+        ' GB</td><td>' +
+        tables[i].networking.unit.toFixed(3) +
+        ' $</td><td>' +
+        tables[i].networking.total.toFixed(2) +
+        ' $</td></tr>';
+      result +=
+        '<tr><th>Total / Month</th><th></th><th></th><th></th><th></th><th>' +
+        tables[i].total_price.toFixed(2) +
+        ' $</th></tr>';
+      result += '</table></div>';
+    } else {
+      result +=
+        '<div class="row" style="min-height: 20px; color: darkred">No data for ' +
+        tables[i].provider +
+        '</div>';
+    }
+  }
+  res.send({ data: result, running: runningStatus });
+});
+
+app.get('/testedPricingAvailableTestNames', async function (req, res, next) {
+  resetLogStatus();
+  let result = '';
+  let rawData = [];
+
+  let dbOnline = false;
+
+  await influx
+    .ping(5000)
+    .then((hosts) => (dbOnline = hosts[0].online))
+    .catch((error) => console.error(error));
+
+  if (dbOnline) {
+    await influx
+      .query(
+        `
+			show tag values from ${req.query.test} with key = "test"
+		`
+      )
+      .then((result) => (rawData = result))
+      .catch((error) => console.error(error));
+  }
+
+  for (let i = 0; i < rawData.length; i++) {
+    result +=
+      '<option value="' +
+      rawData[i].value +
+      '">' +
+      rawData[i].value +
+      '</option>';
+  }
+  res.send({ data: result, running: runningStatus });
+});
+
 app.get('/cleanup', function (req, res, next) {
   runningStatus = true;
   resetLogStatus();
@@ -210,12 +430,14 @@ app.get('/status', function (req, res, next) {
     dataAzureWindows:
       currentLogStatusAzureWindows + currentLogStatusAzureWindowsEnd,
     dataGoogle: currentLogStatusGoogle + currentLogStatusGoogleEnd,
+    dataIBM: currentLogStatusIBM + currentLogStatusIBMEnd,
     dataEnd: currentLogStatusEnd,
     running: runningStatus,
     runningAWS: runningStatusAWS,
     runningAzure: runningStatusAzure,
     runningAzureWindows: runningStatusAzureWindows,
     runningGoogle: runningStatusGoogle,
+    runningIBM: runningStatusIBM,
   });
 });
 
@@ -241,6 +463,8 @@ function resetLogStatus() {
   currentLogStatusAzureWindowsEnd = '';
   currentLogStatusGoogle = '';
   currentLogStatusGoogleEnd = '';
+  currentLogStatusIBM = '';
+  currentLogStatusIBMEnd = '';
   currentLogStatusEnd = '';
 }
 
@@ -305,6 +529,10 @@ async function deploy(params, func, funcFirstUpperCase, testName) {
   }
   if (params.google == 'true') {
     let p = deployGoogle(params, func, funcFirstUpperCase, testName);
+    promises.push(p);
+  }
+  if (params.ibm == 'true') {
+    let p = deployIBM(params, func, funcFirstUpperCase, testName);
     promises.push(p);
   }
 
@@ -669,6 +897,108 @@ async function deployGoogle(params, func, funcFirstUpperCase, testName) {
       'Completed ' + millisToMinutesAndSeconds((end - start).toFixed(3));
 
     runningStatusGoogle = false;
+    resolve();
+  });
+}
+
+/** Deploy Function for IBM */
+async function deployIBM(params, func, funcFirstUpperCase, testName) {
+  return new Promise(async (resolve, reject) => {
+    let start = now();
+
+    currentLogStatusIBM += '<h5>IBM Cloud (sequential deployment)</h5>';
+    currentLogStatusIBM += '<ul stlye="list-style-position: outside">';
+    currentLogStatusIBMEnd += '</ul>';
+    runningStatusIBM = true;
+
+    if (params.node == 'true') {
+      await deployFunction(
+        constants.IBM,
+        constants.NODE,
+        func,
+        'node_' + func,
+        'node_' + func,
+        '',
+        'nodejs:10',
+        '',
+        '',
+        '/ibm/src/node/' + func + '/',
+        'Node.js',
+        ' ',
+        'json',
+        params.ram,
+        params.timeout
+      );
+    }
+    if (params.python == 'true') {
+      await deployFunction(
+        constants.IBM,
+        constants.PYTHON,
+        func,
+        'python_' + func,
+        'python_' + func,
+        '',
+        'python:3.7',
+        '',
+        '',
+        '/ibm/src/python/' + func + '/main.py',
+        'Python',
+        ' ',
+        'json',
+        params.ram,
+        params.timeout
+      );
+    }
+    if (params.go == 'true') {
+      await deployFunction(
+        constants.IBM,
+        constants.GO,
+        func,
+        'go_' + func,
+        'go_' + func,
+        '',
+        'go:1.11',
+        '',
+        '',
+        '/ibm/src/go/' + func + '/' + func + '.go',
+        'Go',
+        ' ',
+        'json',
+        params.ram,
+        params.timeout
+      );
+    }
+    if (params.dotnet == 'true') {
+      await deployFunction(
+        constants.IBM,
+        constants.DOTNET,
+        func,
+        'dotnet_' + func,
+        'dotnet_' + func,
+        '',
+        'dotnet:2.2',
+        '',
+        '',
+        '/ibm/src/dotnet/' + funcFirstUpperCase + '/',
+        '.NET',
+        ' --main ' +
+          funcFirstUpperCase +
+          '::' +
+          funcFirstUpperCase +
+          '.' +
+          funcFirstUpperCase +
+          'Dotnet::Main',
+        'json',
+        params.ram,
+        params.timeout
+      );
+    }
+
+    let end = now();
+    currentLogStatusIBM +=
+      'Completed ' + millisToMinutesAndSeconds((end - start).toFixed(3));
+
+    runningStatusIBM = false;
     resolve();
   });
 }
@@ -1616,6 +1946,217 @@ async function deployFunction(
         time;
       currentLogStatusGoogle +=
         '<br><a href="' + url + '" target="_blank">' + url + '</a></li>';
+    } else if (provider == constants.IBM) {
+      let start = now();
+
+      let dockerPrefixBothVolumes =
+        'docker run --rm -v ibm-secrets:/root/.bluemix -v serverless-data:' +
+        dockerMountPoint +
+        ' ' +
+        IBM_CONTAINER_IMAGE +
+        ' ';
+      let dockerPrefixOnlyCLIVolume =
+        'docker run --rm -v ibm-secrets:/root/.bluemix ' +
+        IBM_CONTAINER_IMAGE +
+        ' ';
+
+      if (language == constants.NODE) {
+        /** Run npm install */
+        await execShellCommand(
+          'docker run --rm -v serverless-data:' +
+            dockerMountPoint +
+            ' node:18-alpine npm --prefix ' +
+            dockerMountPoint +
+            srcPath +
+            ' install ' +
+            dockerMountPoint +
+            srcPath
+        ).catch((err) => {
+          error = true;
+          currentLogStatusIBM +=
+            '<li><span style="color:red">ERROR:</span> Error happened while running "npm install". Function ' +
+            functionName +
+            ' in language ' +
+            languageName +
+            ' was <span style="font-weight: bold">NOT</span> deployed.</li>';
+        });
+        if (error) {
+          return;
+        }
+
+        /** Zip function */
+        await execShellCommand(
+          'docker run --rm -v serverless-data:' +
+            dockerMountPoint +
+            " bschitter/alpine-with-zip:0.1 /bin/sh -c 'cd " +
+            dockerMountPoint +
+            srcPath +
+            '; zip -0 -r ' +
+            functionName +
+            ".zip *'"
+        ).catch((err) => {
+          error = true;
+          currentLogStatusIBM +=
+            '<li><span style="color:red">ERROR:</span> Error happened while zipping function. Function ' +
+            functionName +
+            ' in language ' +
+            languageName +
+            ' was <span style="font-weight: bold">NOT</span> deployed.</li>';
+        });
+        if (error) {
+          return;
+        }
+
+        srcPath = srcPath + functionName + '.zip';
+      } else if (language == constants.DOTNET) {
+        /** Build function */
+        await execShellCommand(
+          'docker run --rm -v serverless-data:' +
+            dockerMountPoint +
+            ' mcr.microsoft.com/dotnet/core/sdk:2.2-alpine3.9 dotnet publish ' +
+            dockerMountPoint +
+            srcPath +
+            ' -c Release -o ' +
+            dockerMountPoint +
+            srcPath +
+            'out'
+        ).catch((err) => {
+          error = true;
+          currentLogStatusIBM +=
+            '<li><span style="color:red">ERROR:</span> Error happened while building function. Function ' +
+            functionName +
+            ' in language ' +
+            languageName +
+            ' was <span style="font-weight: bold">NOT</span> deployed.</li>';
+        });
+        if (error) {
+          return;
+        }
+
+        /** Zipping function */
+        await execShellCommand(
+          'docker run --rm -v serverless-data:' +
+            dockerMountPoint +
+            ' bschitter/alpine-with-zip:0.1 zip -r -0 -j ' +
+            dockerMountPoint +
+            srcPath +
+            functionName +
+            '.zip ' +
+            dockerMountPoint +
+            srcPath +
+            'out'
+        ).catch((err) => {
+          error = true;
+          currentLogStatusIBM +=
+            '<li><span style="color:red">ERROR:</span> Error happened while zipping function. Function ' +
+            functionName +
+            ' in language ' +
+            languageName +
+            ' was <span style="font-weight: bold">NOT</span> deployed.</li>';
+        });
+        if (error) {
+          return;
+        }
+
+        srcPath = srcPath + functionName + '.zip';
+      }
+      /** Set location, organization, space */
+      await execShellCommand(
+        dockerPrefixOnlyCLIVolume +
+          'ibmcloud target -r ' +
+          config.ibm.region +
+          ' --cf-api https://api.' +
+          config.ibm.region +
+          '.cf.cloud.ibm.com -o ' +
+          config.ibm.organization +
+          ' -s ' +
+          config.ibm.space
+      ).catch((err) => {
+        error = true;
+        currentLogStatusIBM +=
+          '<li><span style="color:red">ERROR:</span> Error happened while deploying API. Function ' +
+          functionName +
+          ' in language ' +
+          languageName +
+          ' was <span style="font-weight: bold">NOT</span> deployed.</li>';
+      });
+      if (error) {
+        return;
+      }
+
+      /** Create Action */
+      await execShellCommand(
+        dockerPrefixBothVolumes +
+          'ibmcloud fn action create ' +
+          functionName +
+          ' ' +
+          dockerMountPoint +
+          srcPath +
+          mainMethod +
+          ' --kind ' +
+          runtime +
+          ' --memory ' +
+          ram +
+          ' --timeout ' +
+          timeout +
+          '000 --web true'
+      ).catch((err) => {
+        error = true;
+        currentLogStatusIBM +=
+          '<li><span style="color:red">ERROR:</span> Error happened while deploying function. Function ' +
+          functionName +
+          ' in language ' +
+          languageName +
+          ' was <span style="font-weight: bold">NOT</span> deployed.</li>';
+      });
+      if (error) {
+        return;
+      }
+
+      /** Create API */
+      await execShellCommand(
+        dockerPrefixOnlyCLIVolume +
+          'ibmcloud fn api create /' +
+          APIName +
+          ' get ' +
+          functionName +
+          ' --response-type ' +
+          responseType
+      ).catch((err) => {
+        error = true;
+        currentLogStatusIBM +=
+          '<li><span style="color:red">ERROR:</span> Error happened while deploying API. Function ' +
+          functionName +
+          ' in language ' +
+          languageName +
+          ' was <span style="font-weight: bold">NOT</span> deployed.</li>';
+      });
+      if (error) {
+        return;
+      }
+
+      let end = now();
+      let time = millisToMinutesAndSeconds((end - start).toFixed(3));
+
+      url =
+        'https://' +
+        config.ibm.region +
+        '.functions.cloud.ibm.com/api/v1/web/' +
+        config.ibm.organization +
+        '_' +
+        config.ibm.space +
+        '/default/' +
+        APIName +
+        '.' +
+        responseType;
+      region = config.ibm.region;
+      currentLogStatusIBM +=
+        '<li><span style="color:green">INFO:</span> Deployed ' +
+        languageName +
+        ' function ' +
+        time;
+      currentLogStatusIBM +=
+        '<br><a href="' + url + '" target="_blank">' + url + '</a></li>';
     }
 
     console.log(url);
@@ -1640,6 +2181,9 @@ async function cleanup() {
 
   let p3 = cleanupGoogle();
   promises.push(p3);
+
+  let p4 = cleanupIBM();
+  promises.push(p4);
 
   await Promise.all(promises);
 
@@ -1996,6 +2540,186 @@ async function cleanupGoogle() {
       'Completed ' + millisToMinutesAndSeconds((end - start).toFixed(3));
 
     runningStatusGoogle = false;
+    resolve();
+  });
+}
+
+/** Cleanup Function for IBM */
+async function cleanupIBM() {
+  return new Promise(async (resolve, reject) => {
+    let start = now();
+
+    currentLogStatusIBM += '<h5>IBM Cloud (sequential cleanup)</h5>';
+    currentLogStatusIBM += '<ul stlye="list-style-position: outside">';
+    currentLogStatusIBMEnd += '</ul>';
+    runningStatusIBM = true;
+
+    let error = false;
+    loadConfig();
+
+    for (let r = 0; r < config.ibm.region_options.length; r++) {
+      let ibmFunctions = [],
+        ibmGateways = [];
+
+      let startOfLoading = now();
+
+      /** Set location, organization, space */
+      await execShellCommand(
+        'docker run --rm -v ibm-secrets:/root/.bluemix ' +
+          IBM_CONTAINER_IMAGE +
+          ' ibmcloud target -r ' +
+          config.ibm.region_options[r] +
+          ' --cf-api https://api.' +
+          config.ibm.region_options[r] +
+          '.cf.cloud.ibm.com -o ' +
+          config.ibm.organization +
+          ' -s ' +
+          config.ibm.space
+      ).catch((err) => {
+        error = true;
+        currentLogStatusIBM +=
+          '<li><span style="color:red">ERROR:</span> Error happened while setting CLI to region ' +
+          config.ibm.region_options[r] +
+          '.</li>';
+      });
+      if (error) {
+        return;
+      }
+
+      await execShellCommand(
+        'docker run --rm -v ibm-secrets:/root/.bluemix ' +
+          IBM_CONTAINER_IMAGE +
+          ' ibmcloud fn api list'
+      )
+        .then((stdout) => {
+          let ibmapi = stdout;
+          let array2 = ibmapi.split('\n');
+          array2.pop();
+          array2.shift();
+          array2.shift();
+          for (let i = 0; i < array2.length; i++) {
+            let row = array2[i];
+            row = row.replace(/\s+/g, ' ');
+            let elements = row.split(' ');
+            let parts = elements[3].split('/');
+            ibmGateways.push(parts[parts.length - 1]);
+          }
+        })
+        .catch((err) => {
+          currentLogStatusIBM +=
+            '<li><span style="color:red">ERROR:</span> Could not load existing IBM Cloud APIs</li>';
+          error = true;
+        });
+
+      await execShellCommand(
+        'docker run --rm -v ibm-secrets:/root/.bluemix ' +
+          IBM_CONTAINER_IMAGE +
+          ' ibmcloud fn action list'
+      )
+        .then((stdout) => {
+          let ibmactions = stdout;
+          let array3 = ibmactions.split('\n');
+          array3.pop();
+          array3.shift();
+          for (let i = 0; i < array3.length; i++) {
+            let row = array3[i];
+            row = row.replace(/\s+/g, ' ');
+            let elements = row.split(' ');
+            let parts = elements[0].split('/');
+            ibmFunctions.push(parts[2]);
+          }
+        })
+        .catch((err) => {
+          currentLogStatusIBM +=
+            '<li><span style="color:red">ERROR:</span> Could not load existing IBM Cloud actions</li>';
+          error = true;
+        });
+
+      if (error) {
+        runningStatusIBM = false;
+        resolve();
+        return;
+      } else {
+        currentLogStatusIBM +=
+          'Functions/APIs loaded ' +
+          millisToMinutesAndSeconds((now() - startOfLoading).toFixed(3)) +
+          ' for region ' +
+          config.ibm.region_options[r];
+      }
+
+      if (ibmFunctions.length == 0 && ibmGateways.length == 0) {
+        currentLogStatusIBM +=
+          '<li><span style="color:orange">SKIP:</span> Nothing to clean up for region ' +
+          config.ibm.region_options[r] +
+          '.</li>';
+      }
+
+      for (let i = 0; i < ibmGateways.length; i++) {
+        let start = now();
+        await execShellCommand(
+          'docker run --rm -v ibm-secrets:/root/.bluemix ' +
+            IBM_CONTAINER_IMAGE +
+            ' ibmcloud fn api delete / /' +
+            ibmGateways[i]
+        )
+          .then((stdout) => {
+            let end = now();
+            let time = millisToMinutesAndSeconds((end - start).toFixed(3));
+            currentLogStatusIBM +=
+              '<li><span style="color:green">INFO:</span> Method "/' +
+              ibmGateways[i] +
+              '" on API Gateway "/" in ' +
+              config.ibm.region_options[r] +
+              ' deleted ' +
+              time +
+              '</li>';
+          })
+          .catch((err) => {
+            currentLogStatusIBM +=
+              '<li><span style="color:red">ERROR:</span> Method "/' +
+              ibmGateways[i] +
+              '" on API Gateway "/" in ' +
+              config.ibm.region_options[r] +
+              ' could not be deleted</li>';
+          });
+      }
+
+      for (let i = 0; i < ibmFunctions.length; i++) {
+        let start = now();
+        await execShellCommand(
+          'docker run --rm -v ibm-secrets:/root/.bluemix ' +
+            IBM_CONTAINER_IMAGE +
+            ' ibmcloud fn action delete ' +
+            ibmFunctions[i]
+        )
+          .then((stdout) => {
+            let end = now();
+            let time = millisToMinutesAndSeconds((end - start).toFixed(3));
+            currentLogStatusIBM +=
+              '<li><span style="color:green">INFO:</span> Action "' +
+              ibmFunctions[i] +
+              ' in ' +
+              config.ibm.region_options[r] +
+              '" deleted ' +
+              time +
+              '</li>';
+          })
+          .catch((err) => {
+            currentLogStatusIBM +=
+              '<li><span style="color:red">ERROR:</span> Action "' +
+              ibmFunctions[i] +
+              ' in ' +
+              config.ibm.region_options[r] +
+              '" could not be deleted</li>';
+          });
+      }
+    }
+
+    let end = now();
+    currentLogStatusIBM +=
+      'Completed ' + millisToMinutesAndSeconds((end - start).toFixed(3));
+
+    runningStatusIBM = false;
     resolve();
   });
 }
