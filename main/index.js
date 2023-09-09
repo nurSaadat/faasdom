@@ -622,7 +622,7 @@ async function deployAWS(params, func, funcFirstUpperCase, testName) {
         'dotnet_' + func,
         'dotnet_' + func,
         'dotnet_' + func,
-        'dotnetcore2.1',
+        'dotnet6',
         '',
         funcFirstUpperCase +
           '::' +
@@ -873,7 +873,7 @@ async function deployGoogle(params, func, funcFirstUpperCase, testName) {
         'Go_' + func,
         '',
         '',
-        'go111',
+        'go1.15',
         '',
         '',
         '/google/src/go/' + func,
