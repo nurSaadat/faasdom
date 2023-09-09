@@ -159,7 +159,10 @@ app.get('/loadtest', function (req, res, next) {
 });
 
 async function loadtest(test, testName, rps, duration, n) {
+  console.log('INSIDE LOADTEST');
   let result = await loadtestModule.loadtest(test, testName, rps, duration, n);
+  var jsonString = JSON.stringify(result);
+  console.log(jsonString);
   if (result) {
     resetLogStatus();
     currentLogStatus = 'Benchmark finished.';
