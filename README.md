@@ -97,9 +97,9 @@ To start the main application (in the folder [main](main/)) run:
 docker-compose up -d db grafana app
 ```
 
-The application web interface will be exposed on port 3001 [http://localhost:3001](http://localhost:3001)
+The application web interface will be exposed on port 3001 [http://139.59.146.75:3001](http://139.59.146.75:3001)
 
-Grafana will be exposed on port 3000 LINK [http://localhost:3000](http://localhost:3000)
+Grafana will be exposed on port 3000 LINK [http://139.59.146.75:3000](http://139.59.146.75:3000)
 
 ### Actions
 
