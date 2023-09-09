@@ -143,13 +143,12 @@ app.get('/loadtest', function (req, res, next) {
 });
 
 async function loadtest(test, testName, rps, duration, n) {
-  fs.appendFileSync('./results.log', 'INSIDE LOADTEST');
+  console.log('./results.log', 'INSIDE LOADTEST');
 
   let result = await loadtestModule.loadtest(test, testName, rps, duration, n);
   var jsonString = JSON.stringify(result);
-  fs.appendFileSync('./results.log', jsonString);
-  // let result = loadtestModule.influxtest();
-  fs.appendFileSync('./results.log', result);
+  console.log(jsonString);
+  // fs.appendFileSync('./results.log', jsonString);
 
   if (result) {
     resetLogStatus();
