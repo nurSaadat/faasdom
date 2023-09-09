@@ -244,6 +244,27 @@ async function loadtest(test, testName, rps, duration, n) {
       }
     }
 
+    console.log(
+      'LOOOOOOOOOOOOOOOOOOOOOOOOOOOOG',
+      test + '_benchmark' + '\n',
+      testName + '\n',
+      allUrls[test][i].language + '\n',
+      allUrls[test][i].provider + '\n',
+      allUrls[test][i].memory + '\n',
+      duration + '\n',
+      latency_avg + '\n',
+      latency_stdev + '\n',
+      latency_max + '\n',
+      total_count + '\n',
+      rps + '\n',
+      rps_avg + '\n',
+      percentile_50 + '\n',
+      percentile_95 + '\n',
+      percentile_99 + '\n',
+      errors + '\n',
+      n + '\n'
+    );
+
     insertIntoDB(
       test + '_benchmark',
       testName,
