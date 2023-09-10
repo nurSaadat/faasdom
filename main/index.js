@@ -1292,6 +1292,10 @@ async function deployFunction(
       }
       apiid = apiid.replace('\n', '');
 
+      if (apiid.split(' ').length > 1) {
+        apiid = apiid.split(' ')[0];
+      }
+
       /** get the parent ID of the API */
       let parentresourceid = await execShellCommand(
         dockerPrefixOnlyCLIVolume +
