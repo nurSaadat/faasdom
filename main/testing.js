@@ -244,6 +244,21 @@ function insertIntoDB(
     data[0].fields.measured_read_ms = measured_read_ms;
   }
 
+  console.log(
+    'DATAAAAAAAAAAAAAA' + '\n',
+    'test: ' + test + '\n',
+    'testName: ' + testName + '\n',
+    'lang: ' + language + '\n',
+    'provider: ' + provider + '\n',
+    'memory: ' + memory + '\n',
+    'region: ' + region + '\n',
+    'ms: ' + ms + '\n',
+    'status: ' + success + '\n',
+    'measured_ms: ' + measured_ms + '\n',
+    'measured_write_ms: ' + measured_write_ms + '\n',
+    'measured_read_ms: ' + measured_read_ms + '\n'
+  );
+
   influx.writePoints(data).catch((err) => {
     console.error(err);
     console.error('Could not write to DB!');
