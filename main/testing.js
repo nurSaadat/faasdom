@@ -178,9 +178,9 @@ async function get(test, testName, qs) {
             +'\n',
             'ms: ' + response.elapsedTime + '\n',
             'status: ' + success + '\n',
-            'measured_ms: ' + measured_ms + '\n',
-            'measured_write_ms: ' + measured_write_ms + '\n',
-            'measured_read_ms: ' + measured_read_ms + '\n'
+            'measured_ms: ' + jsonBody.payload.time + '\n',
+            'measured_write_ms: ' + jsonBody.payload.timewrite + '\n',
+            'measured_read_ms: ' + jsonBody.payload.timeread + '\n'
           );
 
           insertIntoDB(

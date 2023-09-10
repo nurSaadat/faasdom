@@ -1296,7 +1296,7 @@ async function deployFunction(
       let parentresourceid = await execShellCommand(
         dockerPrefixOnlyCLIVolume +
           'aws apigateway get-resources --rest-api-id ' +
-          apiid +
+          apiid[0] +
           ' --query "items[?path==\\`/\\`].id" --output text --region ' +
           config.aws.region
       ).catch((err) => {
@@ -1341,7 +1341,7 @@ async function deployFunction(
       let resourceid = await execShellCommand(
         dockerPrefixOnlyCLIVolume +
           'aws apigateway get-resources --rest-api-id ' +
-          apiid +
+          apiid[0] +
           ' --query "items[?path==\\`/' +
           APIPath +
           '\\`].id" --output text --region ' +
