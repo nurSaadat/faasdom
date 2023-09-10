@@ -176,7 +176,7 @@ async function get(test, testName, qs) {
             +'\n',
             'region: ' + allUrls[test][i].region,
             +'\n',
-            'ms: ' + ms + '\n',
+            'ms: ' + response.elapsedTime + '\n',
             'status: ' + success + '\n',
             'measured_ms: ' + measured_ms + '\n',
             'measured_write_ms: ' + measured_write_ms + '\n',
