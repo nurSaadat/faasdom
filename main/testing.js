@@ -124,6 +124,7 @@ function resetURLs() {
 }
 
 async function get(test, testName, qs) {
+  console.log('INSIDE GET FUNCTION!!!!');
   for (let i = 0; i < allUrls[test].length; i++) {
     request.get(
       {
@@ -162,6 +163,25 @@ async function get(test, testName, qs) {
           if (!jsonBody.hasOwnProperty('payload').hasOwnProperty('n')) {
             n = jsonBody.payload.n;
           }
+
+          console.log(
+            'DATAAAAAAAAAAAAAA' + '\n',
+            'test: ' + test + '\n',
+            'testName: ' + testName + '\n',
+            'lang: ' + allUrls[test][i].language,
+            +'\n',
+            'provider: ' + allUrls[test][i].provider,
+            +'\n',
+            'memory: ' + allUrls[test][i].memory,
+            +'\n',
+            'region: ' + allUrls[test][i].region,
+            +'\n',
+            'ms: ' + ms + '\n',
+            'status: ' + success + '\n',
+            'measured_ms: ' + measured_ms + '\n',
+            'measured_write_ms: ' + measured_write_ms + '\n',
+            'measured_read_ms: ' + measured_read_ms + '\n'
+          );
 
           insertIntoDB(
             test,
@@ -243,21 +263,6 @@ function insertIntoDB(
     data[0].fields.measured_write_ms = measured_write_ms;
     data[0].fields.measured_read_ms = measured_read_ms;
   }
-
-  console.log(
-    'DATAAAAAAAAAAAAAA' + '\n',
-    'test: ' + test + '\n',
-    'testName: ' + testName + '\n',
-    'lang: ' + language + '\n',
-    'provider: ' + provider + '\n',
-    'memory: ' + memory + '\n',
-    'region: ' + region + '\n',
-    'ms: ' + ms + '\n',
-    'status: ' + success + '\n',
-    'measured_ms: ' + measured_ms + '\n',
-    'measured_write_ms: ' + measured_write_ms + '\n',
-    'measured_read_ms: ' + measured_read_ms + '\n'
-  );
 
   influx.writePoints(data).catch((err) => {
     console.error(err);

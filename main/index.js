@@ -90,6 +90,7 @@ app.get('/deploy', async function (req, res, next) {
 });
 
 app.get('/run', function (req, res, next) {
+  console.log('RUNNING TEST!!!' + req.query.test);
   runningStatus = true;
   resetLogStatus();
   amountOfCallsCounter = 0;
