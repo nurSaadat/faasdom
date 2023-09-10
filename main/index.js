@@ -873,7 +873,7 @@ async function deployGoogle(params, func, funcFirstUpperCase, testName) {
         'Go_' + func,
         '',
         '',
-        'go1.15',
+        'go121',
         '',
         '',
         '/google/src/go/' + func,
